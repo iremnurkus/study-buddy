@@ -405,8 +405,6 @@ export default function ChatLayout({ currentUser, allUsers, initialConversations
       {showProfile && (
         <ProfilePanel
           currentUser={currentUser}
-          initialSubjects={mySubjects}
-          initialAvailability={myAvailability}
           onClose={() => setShowProfile(false)}
           onSave={loadMyData}
         />
