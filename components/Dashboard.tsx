@@ -8,8 +8,8 @@ import MatchPanel from './MatchPanel'
 const TIP_SUBJECTS = ['Anatomi','Fizyoloji','Biyokimya','Histoloji','Mikrobiyoloji','Patoloji','Farmakoloji','İmmünoloji','Dahiliye','Cerrahi','Pediatri','Kadın Doğum','Psikiyatri','Nöroloji','Kardiyoloji','Radyoloji','TUS Hazırlık','Klinik Beceriler']
 const DAYS = ['Pzt','Sal','Çar','Per','Cum','Cmt','Paz']
 const HOURS = [8,9,10,11,12,13,14,15,16,17,18,19,20,21,22]
-const COLORS = ['#dbeafe','#d1fae5','#fee2e2','#e0e7ff','#fef3c7','#dcfce7']
-const TCOLS = ['#1e40af','#065f46','#991b1b','#3730a3','#92400e','#166534']
+const COLORS = ['#d5edeb','#d1fae5','#fef3c7','#e0e7ff','#fce7f3','#dcfce7']
+const TCOLS = ['#0a5a54','#065f46','#92400e','#3730a3','#9d174d','#166534']
 
 function cidx(s:string){let h=0;for(const c of s)h=(h*31+c.charCodeAt(0))&0xffff;return h%COLORS.length}
 function Avatar({name,size=36}:{name:string,size?:number}){
@@ -212,7 +212,7 @@ export default function Dashboard({currentUser,allUsers,initialConversations,ini
                   <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:3}}>
                     <span style={{fontSize:14,fontWeight:600}}>{u.name}</span>
                     <span style={{fontSize:11,padding:'2px 8px',borderRadius:10,background:'var(--purple-light)',color:'var(--purple)'}}>{u.year}. Sınıf</span>
-                    {u.score>0&&<span style={{fontSize:11,padding:'2px 8px',borderRadius:10,background:'#dbeafe',color:'#1e40af'}}>%{Math.min(100,u.score*7)} uyum</span>}
+                    {u.score>0&&<span style={{fontSize:11,padding:'2px 8px',borderRadius:10,background:'#d5edeb',color:'#0a5a54'}}>%{Math.min(100,u.score*7)} uyum</span>}
                   </div>
                   <div style={{fontSize:12,color:'var(--text3)'}}>
                     {u.userSubjects.length>0?u.userSubjects.slice(0,3).join(', ')+(u.userSubjects.length>3?` +${u.userSubjects.length-3}`:''):'Ders belirtilmemiş'}
@@ -234,7 +234,7 @@ export default function Dashboard({currentUser,allUsers,initialConversations,ini
                     <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
                       {u.userSubjects.map((s:string)=>{
                         const isCommon=u.common.includes(s)
-                        return <span key={s} style={{fontSize:11,padding:'4px 10px',borderRadius:14,background:isCommon?'#dbeafe':'var(--bg2)',color:isCommon?'#1e40af':'var(--text2)',border:isCommon?'1px solid #93c5fd':'0.5px solid var(--border)',fontWeight:isCommon?500:400}}>{isCommon?'✓ ':''}{s}</span>
+                        return <span key={s} style={{fontSize:11,padding:'4px 10px',borderRadius:14,background:isCommon?'#d5edeb':'var(--bg2)',color:isCommon?'#0a5a54':'var(--text2)',border:isCommon?'1px solid #99d5cf':'0.5px solid var(--border)',fontWeight:isCommon?500:400}}>{isCommon?'✓ ':''}{s}</span>
                       })}
                     </div>
                     {u.common.length>0&&<div style={{fontSize:11,color:'var(--green)',marginTop:6}}>✓ {u.common.length} ortak ders</div>}

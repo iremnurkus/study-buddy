@@ -14,8 +14,8 @@ type Props = {
 
 const SUBJECTS = ['Matematik', 'Fizik', 'Kimya', 'Biyoloji', 'Tarih', 'Coğrafya', 'İngilizce', 'Türkçe', 'Genel']
 
-const COLORS = ['#dbeafe', '#d1fae5', '#fee2e2', '#e0e7ff', '#fef3c7', '#dcfce7']
-const TEXT_COLORS = ['#1e40af', '#065f46', '#991b1b', '#3730a3', '#92400e', '#166534']
+const COLORS = ['#d5edeb', '#d1fae5', '#fef3c7', '#e0e7ff', '#fce7f3', '#dcfce7']
+const TEXT_COLORS = ['#0a5a54', '#065f46', '#92400e', '#3730a3', '#9d174d', '#166534']
 
 function getColorIdx(str: string) {
   let h = 0; for (const c of str) h = (h * 31 + c.charCodeAt(0)) & 0xffff
