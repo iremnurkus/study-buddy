@@ -66,7 +66,7 @@ export default function Dashboard({currentUser,allUsers,initialConversations,ini
       const req=(reqs.data??[]).find((r:any)=>(r.sender_id===currentUser.id&&r.receiver_id===u.id)||(r.sender_id===u.id&&r.receiver_id===currentUser.id))
       let rs:'none'|'pending_sent'|'pending_received'|'accepted'='none'
       if(req){if(req.status==='accepted')rs='accepted';else if(req.sender_id===currentUser.id)rs='pending_sent';else rs='pending_received'}
-      const score=common.length*3+commonSlots+(u.year===currentUser.year?5:0)
+      const score=commonSlots+(u.year===currentUser.year?5:0)
       const days=Array.from(uSlotsSet).map(k=>Number(k.split('-')[0]))
       const uniqueDays=Array.from(new Set(days)).sort()
       const userSlots=Array.from(uSlotsSet)

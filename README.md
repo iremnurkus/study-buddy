@@ -1,4 +1,4 @@
-# Study Buddy 📚
+# GaziÇArk 📚
 
 Arkadaşlarınla gerçek zamanlı mesajlaşma platformu.
 

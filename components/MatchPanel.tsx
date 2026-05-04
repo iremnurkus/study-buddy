@@ -87,9 +87,9 @@ export default function MatchPanel({ currentUser, onStartChat, onClose }: Props)
         else requestStatus = 'pending_received'
       }
 
-      // Skor: ortak ders x3 + ortak saat x1 + aynı sınıf x5
+      // Skor: ortak saat x1 + aynı sınıf x5 (dersler sadece bilgi amaçlı)
       const yearBonus = user.year === currentUser.year ? 5 : 0
-      const matchScore = commonSubjects.length * 3 + commonSlots + yearBonus
+      const matchScore = commonSlots + yearBonus
 
       return { ...user, matchScore, commonSubjects, commonSlots, requestStatus }
     })
@@ -133,7 +133,7 @@ export default function MatchPanel({ currentUser, onStartChat, onClose }: Props)
         {/* Header */}
         <div style={{ padding: '20px 24px 0', borderBottom: '0.5px solid var(--border)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-            <h2 style={{ fontSize: '16px', fontWeight: 600 }}>Study Buddy Bul 🔍</h2>
+            <h2 style={{ fontSize: '16px', fontWeight: 600 }}>GaziÇArk Bul 🔍</h2>
             <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', color: 'var(--text3)' }}>✕</button>
           </div>
           <div style={{ display: 'flex', gap: 0 }}>

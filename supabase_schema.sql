@@ -1,5 +1,5 @@
 -- =============================================
--- Study Buddy — Supabase SQL Schema
+-- GaziÇArk — Supabase SQL Schema
 -- Supabase Dashboard > SQL Editor'a yapıştır
 -- =============================================
 

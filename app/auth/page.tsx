@@ -48,7 +48,7 @@ export default function AuthPage() {
       }}>
         <div style={{ marginBottom: '24px' }}>
           <h1 style={{ fontSize: '22px', fontWeight: 600, marginBottom: '6px' }}>
-            📚 Study Buddy
+            📚 GaziÇArk
           </h1>
           <p style={{ fontSize: '14px', color: 'var(--text2)' }}>
             {isRegister ? 'Yeni hesap oluştur' : 'Hesabına giriş yap'}

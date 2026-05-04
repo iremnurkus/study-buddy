@@ -194,14 +194,14 @@ export default function ChatLayout({ currentUser, allUsers, initialConversations
           padding: '16px', borderBottom: '0.5px solid var(--border)',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between'
         }}>
-          <span style={{ fontWeight: 600, fontSize: '15px' }}>📚 Study Buddy</span>
+          <span style={{ fontWeight: 600, fontSize: '15px' }}>📚 GaziÇArk</span>
           <div style={{ display: 'flex', gap: '8px' }}>
             <button onClick={() => setShowMatch(true)} style={{
               ...iconBtn, position: 'relative',
               background: 'var(--purple-light)', borderRadius: 'var(--radius)',
               padding: '4px 10px', fontSize: '12px', color: 'var(--purple)'
             }}>
-              🔍 Buddy Bul
+              🔍 Arkadaş Bul
               {pendingCount > 0 && (
                 <span style={{
                   position: 'absolute', top: '-4px', right: '-4px',
