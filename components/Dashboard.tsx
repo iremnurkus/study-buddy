@@ -8,8 +8,8 @@ import MatchPanel from './MatchPanel'
 const TIP_SUBJECTS = ['Anatomi','Fizyoloji','Biyokimya','Histoloji','Mikrobiyoloji','Patoloji','Farmakoloji','İmmünoloji','Dahiliye','Cerrahi','Pediatri','Kadın Doğum','Psikiyatri','Nöroloji','Kardiyoloji','Radyoloji','TUS Hazırlık','Klinik Beceriler']
 const DAYS = ['Pzt','Sal','Çar','Per','Cum','Cmt','Paz']
 const HOURS = [8,9,10,11,12,13,14,15,16,17,18,19,20,21,22]
-const COLORS = ['#EEEDFE','#E1F5EE','#FAECE7','#E6F1FB','#FAEEDA','#EAF3DE']
-const TCOLS = ['#3C3489','#085041','#4A1B0C','#0C447C','#633806','#3B6D11']
+const COLORS = ['#dbeafe','#d1fae5','#fee2e2','#e0e7ff','#fef3c7','#dcfce7']
+const TCOLS = ['#1e40af','#065f46','#991b1b','#3730a3','#92400e','#166534']
 
 function cidx(s:string){let h=0;for(const c of s)h=(h*31+c.charCodeAt(0))&0xffff;return h%COLORS.length}
 function Avatar({name,size=36}:{name:string,size?:number}){
@@ -132,14 +132,19 @@ export default function Dashboard({currentUser,allUsers,initialConversations,ini
     <div style={{display:'flex',height:'100vh',background:'var(--bg2)',overflow:'hidden'}}>
 
       {/* SIDEBAR */}
-      <div style={{width:56,flexShrink:0,background:'var(--bg)',borderRight:'0.5px solid var(--border)',display:'flex',flexDirection:'column',alignItems:'center',paddingTop:12,gap:4}}>
-        <div style={{fontSize:22,marginBottom:8}}>📚</div>
-        <SideBtn id="sb-teklif" active={showPanel} title="Çalışma Teklifi" onClick={()=>setShowPanel(p=>!p)}>📋</SideBtn>
-        <SideBtn id="sb-buddy" title="Buddy Bul" onClick={()=>setShowMatch(true)} badge={pending}>🔍</SideBtn>
-        <SideBtn id="sb-profil" title="Profil" onClick={()=>setShowProfile(true)}>⚙️</SideBtn>
-        <div style={{flex:1}}/>
-        <SideBtn id="sb-cikis" title="Çıkış" onClick={async()=>{await sb.auth.signOut();window.location.href='/auth'}}>↩</SideBtn>
-        <div style={{height:12}}/>
+      <div style={{width:200,flexShrink:0,background:'var(--bg)',borderRight:'0.5px solid var(--border)',display:'flex',flexDirection:'column',overflow:'hidden'}}>
+        <div style={{padding:'16px 14px',borderBottom:'0.5px solid var(--border)',display:'flex',alignItems:'center',gap:8}}>
+          <span style={{fontSize:22}}>📚</span>
+          <span style={{fontSize:16,fontWeight:700,color:'var(--text)'}}>GaziÇArk</span>
+        </div>
+        <div style={{flex:1,padding:'8px 6px',display:'flex',flexDirection:'column',gap:2}}>
+          <SideBtn id="sb-teklif" active={showPanel} label="Çalışma Teklifi" title="Çalışma Teklifi" onClick={()=>setShowPanel(p=>!p)}>📋</SideBtn>
+          <SideBtn id="sb-buddy" label="Arkadaş Bul" title="Arkadaş Bul" onClick={()=>setShowMatch(true)} badge={pending}>🔍</SideBtn>
+          <SideBtn id="sb-profil" label="Profil" title="Profil" onClick={()=>setShowProfile(true)}>⚙️</SideBtn>
+        </div>
+        <div style={{padding:'8px 6px',borderTop:'0.5px solid var(--border)'}}>
+          <SideBtn id="sb-cikis" label="Çıkış" title="Çıkış" onClick={async()=>{await sb.auth.signOut();window.location.href='/auth'}}>↩</SideBtn>
+        </div>
       </div>
 
       {/* PROPOSAL PANEL */}
@@ -207,7 +212,7 @@ export default function Dashboard({currentUser,allUsers,initialConversations,ini
                   <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:3}}>
                     <span style={{fontSize:14,fontWeight:600}}>{u.name}</span>
                     <span style={{fontSize:11,padding:'2px 8px',borderRadius:10,background:'var(--purple-light)',color:'var(--purple)'}}>{u.year}. Sınıf</span>
-                    {u.score>0&&<span style={{fontSize:11,padding:'2px 8px',borderRadius:10,background:'#E1F5EE',color:'#085041'}}>%{Math.min(100,u.score*7)} uyum</span>}
+                    {u.score>0&&<span style={{fontSize:11,padding:'2px 8px',borderRadius:10,background:'#dbeafe',color:'#1e40af'}}>%{Math.min(100,u.score*7)} uyum</span>}
                   </div>
                   <div style={{fontSize:12,color:'var(--text3)'}}>
                     {u.userSubjects.length>0?u.userSubjects.slice(0,3).join(', ')+(u.userSubjects.length>3?` +${u.userSubjects.length-3}`:''):'Ders belirtilmemiş'}
@@ -229,7 +234,7 @@ export default function Dashboard({currentUser,allUsers,initialConversations,ini
                     <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
                       {u.userSubjects.map((s:string)=>{
                         const isCommon=u.common.includes(s)
-                        return <span key={s} style={{fontSize:11,padding:'4px 10px',borderRadius:14,background:isCommon?'#EEEDFE':'var(--bg2)',color:isCommon?'#3C3489':'var(--text2)',border:isCommon?'1px solid #c5c0f0':'0.5px solid var(--border)',fontWeight:isCommon?500:400}}>{isCommon?'✓ ':''}{s}</span>
+                        return <span key={s} style={{fontSize:11,padding:'4px 10px',borderRadius:14,background:isCommon?'#dbeafe':'var(--bg2)',color:isCommon?'#1e40af':'var(--text2)',border:isCommon?'1px solid #93c5fd':'0.5px solid var(--border)',fontWeight:isCommon?500:400}}>{isCommon?'✓ ':''}{s}</span>
                       })}
                     </div>
                     {u.common.length>0&&<div style={{fontSize:11,color:'var(--green)',marginTop:6}}>✓ {u.common.length} ortak ders</div>}
@@ -346,11 +351,12 @@ export default function Dashboard({currentUser,allUsers,initialConversations,ini
   )
 }
 
-function SideBtn({children,onClick,active,title,badge,id}:{children:any,onClick:()=>void,active?:boolean,title:string,badge?:number,id?:string}){
+function SideBtn({children,onClick,active,title,badge,id,label}:{children:any,onClick:()=>void,active?:boolean,title:string,badge?:number,id?:string,label?:string}){
   return(
-    <button id={id} title={title} onClick={onClick} style={{width:40,height:40,borderRadius:'var(--radius)',border:'none',cursor:'pointer',fontSize:18,background:active?'var(--purple-light)':'none',display:'flex',alignItems:'center',justifyContent:'center',position:'relative',color:active?'var(--purple)':'inherit'}}>
-      {children}
-      {(badge??0)>0&&<span style={{position:'absolute',top:2,right:2,background:'#E24B4A',color:'#fff',fontSize:9,borderRadius:'50%',width:14,height:14,display:'flex',alignItems:'center',justifyContent:'center'}}>{badge}</span>}
+    <button id={id} title={title} onClick={onClick} style={{width:'100%',padding:'8px 10px',borderRadius:'var(--radius)',border:'none',cursor:'pointer',fontSize:18,background:active?'var(--purple-light)':'none',display:'flex',alignItems:'center',gap:10,position:'relative',color:active?'var(--purple)':'inherit',transition:'background .15s'}} onMouseEnter={e=>{if(!active)(e.currentTarget as HTMLButtonElement).style.background='var(--bg2)'}} onMouseLeave={e=>{if(!active)(e.currentTarget as HTMLButtonElement).style.background='none'}}>
+      <span style={{flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',width:24,height:24}}>{children}</span>
+      {label&&<span style={{fontSize:13,fontWeight:active?600:500,color:active?'var(--purple)':'var(--text2)',whiteSpace:'nowrap'}}>{label}</span>}
+      {(badge??0)>0&&<span style={{marginLeft:'auto',background:'#E24B4A',color:'#fff',fontSize:9,borderRadius:'50%',width:16,height:16,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>{badge}</span>}
     </button>
   )
 }

@@ -5,8 +5,8 @@ import { createClient } from '@/lib/supabase/client'
 import type { MatchedUser, Profile, FriendRequest } from '@/types'
 
 const DAYS = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar']
-const COLORS = ['#EEEDFE','#E1F5EE','#FAECE7','#E6F1FB','#FAEEDA','#EAF3DE']
-const TEXT_COLORS = ['#3C3489','#085041','#4A1B0C','#0C447C','#633806','#3B6D11']
+const COLORS = ['#dbeafe','#d1fae5','#fee2e2','#e0e7ff','#fef3c7','#dcfce7']
+const TEXT_COLORS = ['#1e40af','#065f46','#991b1b','#3730a3','#92400e','#166534']
 
 function getColorIdx(str: string) {
   let h = 0; for (const c of str) h = (h * 31 + c.charCodeAt(0)) & 0xffff
@@ -200,7 +200,7 @@ export default function MatchPanel({ currentUser, onStartChat, onClose }: Props)
                             {user.matchScore > 0 && (
                               <span style={{
                                 fontSize: '11px', padding: '2px 8px', borderRadius: '10px',
-                                background: '#E1F5EE', color: '#085041'
+                                background: '#dbeafe', color: '#1e40af'
                               }}>%{Math.min(100, user.matchScore * 8)} uyum</span>
                             )}
                           </div>
@@ -214,7 +214,7 @@ export default function MatchPanel({ currentUser, onStartChat, onClose }: Props)
                               {user.commonSubjects.map(s => (
                                 <span key={s} style={{
                                   fontSize: '11px', padding: '2px 8px', borderRadius: '10px',
-                                  background: '#EEEDFE', color: '#3C3489'
+                                  background: '#dbeafe', color: '#1e40af'
                                 }}>{s}</span>
                               ))}
                             </div>
