@@ -53,3 +53,15 @@ export type MatchedUser = Profile & {
   commonSlots: number
   requestStatus: 'none' | 'pending_sent' | 'pending_received' | 'accepted'
 }
+
+export type StudyProposal = {
+  id: string
+  sender_id: string
+  receiver_id: string
+  subject: string
+  date: string
+  hours: number[]
+  message?: string
+  status: 'pending' | 'accepted' | 'rejected'
+  created_at: string
+}

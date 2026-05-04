@@ -87,11 +87,10 @@ export default function MatchPanel({ currentUser, onStartChat, onClose }: Props)
         else requestStatus = 'pending_received'
       }
 
-      // Skor: ortak saat x1 + aynı sınıf x5 (dersler sadece bilgi amaçlı)
-      const yearBonus = user.year === currentUser.year ? 5 : 0
-      const matchScore = commonSlots + yearBonus
+      // Skor: sadece ortak saatlere göre
+      const matchPercent = mySlotSet.size > 0 ? Math.round((commonSlots / mySlotSet.size) * 100) : 0
 
-      return { ...user, matchScore, commonSubjects, commonSlots, requestStatus }
+      return { ...user, matchScore: commonSlots, matchPercent, commonSubjects, commonSlots, requestStatus }
     })
 
     matched.sort((a, b) => b.matchScore - a.matchScore)
@@ -197,12 +196,12 @@ export default function MatchPanel({ currentUser, onStartChat, onClose }: Props)
                               fontSize: '11px', padding: '2px 8px', borderRadius: '10px',
                               background: 'var(--purple-light)', color: 'var(--purple-dark)'
                             }}>{user.year}. Sınıf</span>
-                            {user.matchScore > 0 && (
+                            {/* {user.matchPercent > 0 && (
                               <span style={{
                                 fontSize: '11px', padding: '2px 8px', borderRadius: '10px',
-                                background: '#d5edeb', color: '#0a5a54'
-                              }}>%{Math.min(100, user.matchScore * 8)} uyum</span>
-                            )}
+                                background: 'var(--purple-light)', color: 'var(--purple-dark)'
+                              }}>%{user.matchPercent} uyum</span>
+                            )} */}
                           </div>
 
                           {user.bio && (
@@ -214,7 +213,7 @@ export default function MatchPanel({ currentUser, onStartChat, onClose }: Props)
                               {user.commonSubjects.map(s => (
                                 <span key={s} style={{
                                   fontSize: '11px', padding: '2px 8px', borderRadius: '10px',
-                                  background: '#d5edeb', color: '#0a5a54'
+                                  background: 'var(--purple-light)', color: 'var(--purple-dark)'
                                 }}>{s}</span>
                               ))}
                             </div>

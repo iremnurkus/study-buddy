@@ -1,9 +1,10 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import type { Profile, Message } from '@/types'
+import type { Profile, Message, StudyProposal } from '@/types'
 import ProfilePanel from './ProfilePanel'
 import MatchPanel from './MatchPanel'
+import StudyProposalModal from './StudyProposalModal'
 
 const TIP_SUBJECTS = ['Anatomi','Fizyoloji','Biyokimya','Histoloji','Mikrobiyoloji','Patoloji','Farmakoloji','İmmünoloji','Dahiliye','Cerrahi','Pediatri','Kadın Doğum','Psikiyatri','Nöroloji','Kardiyoloji','Radyoloji','TUS Hazırlık','Klinik Beceriler']
 const DAYS = ['Pzt','Sal','Çar','Per','Cum','Cmt','Paz']
@@ -35,11 +36,75 @@ export default function Dashboard({currentUser,allUsers,initialConversations,ini
   const [online,setOnline]=useState<Set<string>>(new Set())
   const [showProfile,setShowProfile]=useState(false)
   const [showMatch,setShowMatch]=useState(false)
+  const [showPlans,setShowPlans]=useState(false)
+  const [selectedPlanDate,setSelectedPlanDate]=useState<string|null>(null)
   const [pending,setPending]=useState(0)
   const [expandedUser,setExpandedUser]=useState<string|null>(null)
+  const [proposalTarget,setProposalTarget]=useState<any|null>(null)
+  const [proposals,setProposals]=useState<StudyProposal[]>([])
+  const [pendingProposalsCount,setPendingProposalsCount]=useState(0)
   const endRef=useRef<HTMLDivElement>(null)
 
-  useEffect(()=>{loadFeed();loadPending()},[])
+  useEffect(()=>{loadFeed();loadPending();loadProposals();requestNotificationPermission()},[])
+
+  async function requestNotificationPermission() {
+    if ('Notification' in window && Notification.permission !== 'denied') {
+      await Notification.requestPermission()
+    }
+  }
+
+  async function loadProposals() {
+    const { data } = await sb.from('study_proposals')
+      .select('*')
+      .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
+      .order('created_at', { ascending: false })
+    
+    const props = data as StudyProposal[] || []
+    setProposals(props)
+    
+    const pCount = props.filter(p => p.receiver_id === currentUser.id && p.status === 'pending').length
+    setPendingProposalsCount(pCount)
+  }
+
+  // Hatırlatıcı kontrolcüsü
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = new Date()
+
+      proposals.forEach(p => {
+        if (p.status !== 'accepted' || !p.date) return
+        const pHours = p.hours ? p.hours : ((p as any).hour ? [(p as any).hour] : [])
+        const [y, m, d] = p.date.split('-').map(Number)
+        
+        pHours.forEach(h => {
+          const proposalTime = new Date(y, m - 1, d, h, 0, 0).getTime()
+          const diffMinutes = Math.round((proposalTime - now.getTime()) / 60000)
+
+          let msg = ''
+          if (diffMinutes === 24 * 60) {
+            msg = `Yarın ${p.subject} çalışmanız var!`
+          } else if (diffMinutes === 10) {
+            msg = `${p.subject} çalışmanız 10 dakika sonra başlıyor!`
+          } else if (diffMinutes === 5) {
+            msg = `${p.subject} çalışmanız 5 dakika sonra başlıyor!`
+          }
+
+          if (msg) {
+            const otherId = p.sender_id === currentUser.id ? p.receiver_id : p.sender_id
+            const other = allUsers.find(u => u.id === otherId)
+            if ('Notification' in window && Notification.permission === 'granted') {
+              new Notification('Birlikte Çalışma Hatırlatması', {
+                body: `${other?.name || 'Arkadaşın'} ile ${msg}`,
+                icon: '/favicon.ico'
+              })
+            }
+          }
+        })
+      })
+    }, 60000) // Her dakika kontrol et
+
+    return () => clearInterval(interval)
+  }, [proposals, allUsers, currentUser.id])
 
   async function loadPending(){
     const {data}=await sb.from('friend_requests').select('id').eq('receiver_id',currentUser.id).eq('status','pending')
@@ -66,11 +131,14 @@ export default function Dashboard({currentUser,allUsers,initialConversations,ini
       const req=(reqs.data??[]).find((r:any)=>(r.sender_id===currentUser.id&&r.receiver_id===u.id)||(r.sender_id===u.id&&r.receiver_id===currentUser.id))
       let rs:'none'|'pending_sent'|'pending_received'|'accepted'='none'
       if(req){if(req.status==='accepted')rs='accepted';else if(req.sender_id===currentUser.id)rs='pending_sent';else rs='pending_received'}
-      const score=commonSlots+(u.year===currentUser.year?5:0)
+      
+      const matchPercent=mySlots.size>0?Math.round((commonSlots/mySlots.size)*100):0
+      const score=commonSlots
+      
       const days=Array.from(uSlotsSet).map(k=>Number(k.split('-')[0]))
       const uniqueDays=Array.from(new Set(days)).sort()
       const userSlots=Array.from(uSlotsSet)
-      return{...u,common,commonSlots,score,rs,uniqueDays,userSubjects:us,userSlots}
+      return{...u,common,commonSlots,score,matchPercent,rs,uniqueDays,userSubjects:us,userSlots}
     }).filter((u:any)=>u.userSubjects.length>0||Array.from(avail).length>0).sort((a:any,b:any)=>b.score-a.score)
     setFeed(items)
     setLoadingFeed(false)
@@ -138,8 +206,9 @@ export default function Dashboard({currentUser,allUsers,initialConversations,ini
           <span style={{fontSize:16,fontWeight:700,color:'var(--text)'}}>GaziÇArk</span>
         </div>
         <div style={{flex:1,padding:'8px 6px',display:'flex',flexDirection:'column',gap:2}}>
-          <SideBtn id="sb-teklif" active={showPanel} label="Çalışma Teklifi" title="Çalışma Teklifi" onClick={()=>setShowPanel(p=>!p)}>📋</SideBtn>
+          <SideBtn id="sb-teklif" active={showPanel} label="Kendi Programım" title="Kendi Programım" onClick={()=>{setShowPanel(p=>!p);setShowPlans(false)}}>📋</SideBtn>
           <SideBtn id="sb-buddy" label="Arkadaş Bul" title="Arkadaş Bul" onClick={()=>setShowMatch(true)} badge={pending}>🔍</SideBtn>
+          <SideBtn id="sb-planlar" active={showPlans} label="Çalışma Planım" title="Çalışma Planım" onClick={()=>{setShowPlans(p=>!p);setShowPanel(false)}} badge={pendingProposalsCount}>📅</SideBtn>
           <SideBtn id="sb-profil" label="Profil" title="Profil" onClick={()=>setShowProfile(true)}>⚙️</SideBtn>
         </div>
         <div style={{padding:'8px 6px',borderTop:'0.5px solid var(--border)'}}>
@@ -185,6 +254,97 @@ export default function Dashboard({currentUser,allUsers,initialConversations,ini
         </div>
       )}
 
+      {/* WORK PLANS PANEL */}
+      {showPlans&&(
+        <div style={{width:360,flexShrink:0,background:'var(--bg)',borderRight:'0.5px solid var(--border)',display:'flex',flexDirection:'column',overflow:'hidden',animation:'slideIn .2s ease'}}>
+          <div style={{padding:'16px 16px 12px',borderBottom:'0.5px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+            <div>
+              <div style={{fontSize:14,fontWeight:700}}>📅 Çalışma Planım</div>
+              <div style={{fontSize:11,color:'var(--text3)',marginTop:2}}>Takvimden gün seçerek filtreleyebilirsiniz</div>
+            </div>
+            <button onClick={()=>setShowPlans(false)} style={{background:'none',border:'none',cursor:'pointer',fontSize:16,color:'var(--text3)'}}>✕</button>
+          </div>
+          
+          {/* Mini Calendar Filter */}
+          <div style={{padding:'12px 16px',borderBottom:'0.5px solid var(--border)',background:'var(--bg2)'}}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>
+              {Array.from({length: 14}).map((_, i) => {
+                const d = new Date()
+                d.setDate(d.getDate() + i)
+                const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+                const dayIdx = (d.getDay() + 6) % 7
+                const hasProposals = proposals.some(p => p.date === dateStr && p.status !== 'rejected')
+                const isSel = selectedPlanDate === dateStr
+                
+                return (
+                  <div 
+                    key={dateStr} 
+                    onClick={() => setSelectedPlanDate(p => p === dateStr ? null : dateStr)}
+                    style={{
+                      width: '100%', height: '48px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                      borderRadius: 'var(--radius)', border: isSel ? '2px solid var(--purple)' : '1px solid var(--border)',
+                      background: isSel ? 'var(--purple-light)' : 'var(--bg)',
+                      cursor: 'pointer', position: 'relative',
+                      transition: 'all .1s'
+                    }}
+                  >
+                    <span style={{ fontSize: '10px', color: isSel ? 'var(--purple)' : 'var(--text3)', fontWeight: 500 }}>{DAYS[dayIdx].substring(0,3)}</span>
+                    <span style={{ fontSize: '14px', fontWeight: 700, color: isSel ? 'var(--purple)' : 'var(--text)' }}>{d.getDate()}</span>
+                    {hasProposals && <span style={{position:'absolute',bottom:'4px',width:'4px',height:'4px',borderRadius:'50%',background:'var(--purple)'}}/>}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          <div style={{flex:1,overflowY:'auto',padding:'14px 16px',display:'flex',flexDirection:'column',gap:12}}>
+            {proposals.length === 0 ? (
+               <div style={{textAlign:'center',color:'var(--text3)',paddingTop:40}}>
+                 <div style={{fontSize:32,marginBottom:8}}>📭</div>
+                 <p style={{fontSize:13}}>Henüz teklif yok</p>
+               </div>
+            ) : proposals.filter(p => !selectedPlanDate || p.date === selectedPlanDate).map(p => {
+              const isMine = p.sender_id === currentUser.id
+              const otherUser = allUsers.find(u => u.id === (isMine ? p.receiver_id : p.sender_id))
+              if (!otherUser) return null
+              
+              // Tarihi formatla
+              const pDate = new Date(p.date)
+              const pDayIdx = (pDate.getDay() + 6) % 7
+              const dateDisplay = `${pDate.getDate()} ${['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'][pDate.getMonth()]} ${DAYS[pDayIdx]}`
+
+              return (
+                <div key={p.id} style={{background:'var(--bg2)',border:'0.5px solid var(--border)',borderRadius:'var(--radius)',padding:'12px',fontSize:'13px'}}>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:'8px'}}>
+                    <div style={{fontWeight:600}}>{otherUser.name} ile</div>
+                    {p.status === 'pending' ? (
+                      <span style={{fontSize:'10px',background:'#fef3c7',color:'#92400e',padding:'2px 6px',borderRadius:'10px'}}>Bekliyor</span>
+                    ) : p.status === 'accepted' ? (
+                      <span style={{fontSize:'10px',background:'#d1fae5',color:'#065f46',padding:'2px 6px',borderRadius:'10px'}}>Onaylandı</span>
+                    ) : (
+                      <span style={{fontSize:'10px',background:'#fee2e2',color:'#991b1b',padding:'2px 6px',borderRadius:'10px'}}>Reddedildi</span>
+                    )}
+                  </div>
+                  <div style={{color:'var(--text2)',fontSize:'12px',marginBottom:'8px'}}>
+                    📚 {p.subject} <br/>
+                    🕒 {dateDisplay} - {(p.hours ? p.hours : ((p as any).hour ? [(p as any).hour] : [])).map(h => `${h}:00`).join(', ')}
+                  </div>
+                  {p.message && (
+                    <div style={{fontSize:'12px',background:'var(--bg)',padding:'6px',borderRadius:'4px',fontStyle:'italic',marginBottom:'8px',color:'var(--text2)'}}>"{p.message}"</div>
+                  )}
+                  {p.status === 'pending' && !isMine && (
+                    <div style={{display:'flex',gap:'6px',marginTop:'8px'}}>
+                      <button onClick={async ()=>{await sb.from('study_proposals').update({status:'rejected'}).eq('id',p.id);loadProposals()}} style={{flex:1,padding:'6px',fontSize:'12px',background:'none',border:'0.5px solid var(--border)',borderRadius:'var(--radius)',cursor:'pointer'}}>Reddet</button>
+                      <button onClick={async ()=>{await sb.from('study_proposals').update({status:'accepted'}).eq('id',p.id);loadProposals()}} style={{flex:1,padding:'6px',fontSize:'12px',background:'var(--purple)',color:'#fff',border:'none',borderRadius:'var(--radius)',cursor:'pointer'}}>Kabul Et</button>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       {/* CENTER FEED */}
       <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
         <div style={{padding:'14px 20px',background:'var(--bg)',borderBottom:'0.5px solid var(--border)',flexShrink:0}}>
@@ -212,7 +372,7 @@ export default function Dashboard({currentUser,allUsers,initialConversations,ini
                   <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:3}}>
                     <span style={{fontSize:14,fontWeight:600}}>{u.name}</span>
                     <span style={{fontSize:11,padding:'2px 8px',borderRadius:10,background:'var(--purple-light)',color:'var(--purple)'}}>{u.year}. Sınıf</span>
-                    {u.score>0&&<span style={{fontSize:11,padding:'2px 8px',borderRadius:10,background:'#d5edeb',color:'#0a5a54'}}>%{Math.min(100,u.score*7)} uyum</span>}
+                    {u.matchPercent>0&&<span style={{fontSize:11,padding:'2px 8px',borderRadius:10,background:'#d5edeb',color:'#0a5a54'}}>%{u.matchPercent} uyum</span>}
                   </div>
                   <div style={{fontSize:12,color:'var(--text3)'}}>
                     {u.userSubjects.length>0?u.userSubjects.slice(0,3).join(', ')+(u.userSubjects.length>3?` +${u.userSubjects.length-3}`:''):'Ders belirtilmemiş'}
@@ -234,10 +394,10 @@ export default function Dashboard({currentUser,allUsers,initialConversations,ini
                     <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
                       {u.userSubjects.map((s:string)=>{
                         const isCommon=u.common.includes(s)
-                        return <span key={s} style={{fontSize:11,padding:'4px 10px',borderRadius:14,background:isCommon?'#d5edeb':'var(--bg2)',color:isCommon?'#0a5a54':'var(--text2)',border:isCommon?'1px solid #99d5cf':'0.5px solid var(--border)',fontWeight:isCommon?500:400}}>{isCommon?'✓ ':''}{s}</span>
+                        return <span key={s} style={{fontSize:11,padding:'4px 10px',borderRadius:14,background:isCommon?'var(--purple-light)':'var(--bg2)',color:isCommon?'var(--purple-dark)':'var(--text2)',border:isCommon?'1px solid var(--border)':'0.5px solid var(--border)',fontWeight:isCommon?500:400}}>{isCommon?'✓ ':''}{s}</span>
                       })}
                     </div>
-                    {u.common.length>0&&<div style={{fontSize:11,color:'var(--green)',marginTop:6}}>✓ {u.common.length} ortak ders</div>}
+                    {u.common.length>0&&<div style={{fontSize:11,color:'var(--purple)',marginTop:6}}>✓ {u.common.length} ortak ders</div>}
                   </div>
 
                   {/* Availability mini-table */}
@@ -258,7 +418,7 @@ export default function Dashboard({currentUser,allUsers,initialConversations,ini
                                 const theirSlot=u.userSlots.includes(slotKey)
                                 const mySlot=mySlotSet.has(slotKey)
                                 const isCommonSlot=theirSlot&&mySlot
-                                return <td key={d} style={{width:30,height:20,background:isCommonSlot?'var(--green)':theirSlot?'var(--purple)':'var(--bg2)',border:'1px solid var(--bg)',borderRadius:3,opacity:theirSlot?1:0.4}} title={isCommonSlot?'Ortak müsait!':theirSlot?'Müsait':''}/>
+                                return <td key={d} style={{width:30,height:20,background:isCommonSlot?'var(--purple-dark)':theirSlot?'var(--purple)':'var(--bg2)',border:'1px solid var(--bg)',borderRadius:3,opacity:theirSlot?1:0.4}} title={isCommonSlot?'Ortak müsait!':theirSlot?'Müsait':''}/>
                               })}
                             </tr>
                           )})}</tbody>
@@ -266,13 +426,14 @@ export default function Dashboard({currentUser,allUsers,initialConversations,ini
                       </div>
                       <div style={{display:'flex',gap:12,marginTop:8,fontSize:10,color:'var(--text3)'}}>
                         <span><span style={{display:'inline-block',width:10,height:10,borderRadius:2,background:'var(--purple)',verticalAlign:'middle',marginRight:4}}/>Müsait</span>
-                        <span><span style={{display:'inline-block',width:10,height:10,borderRadius:2,background:'var(--green)',verticalAlign:'middle',marginRight:4}}/>Ortak</span>
+                        <span><span style={{display:'inline-block',width:10,height:10,borderRadius:2,background:'var(--purple-dark)',verticalAlign:'middle',marginRight:4}}/>Ortak</span>
                       </div>
                     </div>
                   )}
 
                   {/* Actions */}
                   <div style={{marginTop:16,display:'flex',gap:8,justifyContent:'flex-end'}}>
+                    <button onClick={(e)=>{e.stopPropagation();setProposalTarget(u)}} style={{padding:'8px 16px',fontSize:12,fontWeight:500,background:'var(--bg3)',color:'var(--text)',border:'0.5px solid var(--border)',borderRadius:'var(--radius)',cursor:'pointer'}}>📚 Birlikte Çalış</button>
                     {u.rs==='none'&&<button onClick={(e)=>{e.stopPropagation();sendReq(u.id)}} style={{padding:'8px 16px',fontSize:12,fontWeight:500,background:'var(--purple)',color:'#fff',border:'none',borderRadius:'var(--radius)',cursor:'pointer'}}>İstek Gönder</button>}
                     {u.rs==='pending_sent'&&<span style={{fontSize:12,color:'var(--text3)',padding:'8px 0'}}>⏳ İstek gönderildi</span>}
                     {u.rs==='pending_received'&&<span style={{fontSize:12,color:'#E24B4A',padding:'8px 0'}}>📩 İstek bekliyor</span>}
@@ -346,6 +507,7 @@ export default function Dashboard({currentUser,allUsers,initialConversations,ini
 
       {showProfile&&<ProfilePanel currentUser={currentUser} onClose={()=>setShowProfile(false)} onSave={()=>setShowProfile(false)}/>}
       {showMatch&&<MatchPanel currentUser={currentUser} onStartChat={startChat} onClose={()=>{setShowMatch(false);loadPending()}}/>}
+      {proposalTarget&&<StudyProposalModal currentUser={currentUser} targetUser={proposalTarget} mySlots={Array.from(avail)} onClose={()=>setProposalTarget(null)} onSuccess={()=>{setProposalTarget(null);loadProposals();setShowPlans(true)}}/>}
       <style>{`@keyframes slideIn{from{opacity:0;transform:translateX(-16px)}to{opacity:1;transform:translateX(0)}}@keyframes fadeIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}`}</style>
     </div>
   )

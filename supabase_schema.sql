@@ -84,3 +84,35 @@ create policy "Konuşmaya mesaj gönderebilir"
 -- =============================================
 alter publication supabase_realtime add table messages;
 alter publication supabase_realtime add table conversations;
+
+-- =============================================
+-- 4. Birlikte Çalışma Teklifleri
+-- =============================================
+
+create table if not exists study_proposals (
+  id uuid primary key default gen_random_uuid(),
+  sender_id uuid references profiles on delete cascade not null,
+  receiver_id uuid references profiles on delete cascade not null,
+  subject text not null,
+  date date not null,
+  hours int[] not null,
+  message text,
+  status text not null default 'pending', -- 'pending', 'accepted', 'rejected'
+  created_at timestamptz default now()
+);
+
+alter table study_proposals enable row level security;
+
+create policy "Kullanıcı teklifleri görebilir"
+  on study_proposals for select
+  using (auth.uid() = sender_id or auth.uid() = receiver_id);
+
+create policy "Kullanıcı teklif gönderebilir"
+  on study_proposals for insert
+  with check (auth.uid() = sender_id);
+
+create policy "Kullanıcı aldığı teklifi güncelleyebilir"
+  on study_proposals for update
+  using (auth.uid() = receiver_id);
+
+alter publication supabase_realtime add table study_proposals;
