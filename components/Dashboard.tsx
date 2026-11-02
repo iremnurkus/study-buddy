@@ -389,6 +389,7 @@ export default function Dashboard({currentUser,allUsers,initialConversations,ini
                           <div style={{fontSize:28,fontWeight:700,fontVariantNumeric:'tabular-nums',color:'var(--purple)'}}>{fmtClock(remaining)}</div>
                           <div style={{height:4,background:'var(--bg3)',marginTop:6}}><div style={{height:'100%',width:`${Math.min(100,Math.max(0,(1-remaining/durMs(p))*100))}%`,background:'var(--purple)',transition:'width 1s linear'}}/></div>
                           <div style={{fontSize:11,color:'var(--text3)',marginTop:4}}>Kalan süre</div>
+                          <button onClick={async()=>{if(!confirm('Oturumu şimdi bitirmek istiyor musun? Bu iki taraf için de oturumu sonlandırır.'))return;completing.current.add(p.id);const {error}=await sb.from('study_proposals').update({completed_at:new Date().toISOString()}).eq('id',p.id);if(error)alert('Oturum bitirilemedi: '+error.message);loadProposals()}} style={{marginTop:10,padding:'8px 16px',fontSize:12,fontWeight:600,background:'#B42318',color:'#fff',border:'none',borderRadius:'var(--radius)',cursor:'pointer'}}>Oturumu Bitir</button>
                         </div>
                       )}
                       {st==='idle'&&(()=>{
@@ -428,29 +429,6 @@ export default function Dashboard({currentUser,allUsers,initialConversations,ini
                 })}
               </div>
             )}
-            <div style={{fontSize:12,fontWeight:700,color:'var(--text2)',marginBottom:12}}>Serbest Oturum</div>
-            <div style={{display:'flex',flexWrap:'wrap',gap:6,marginBottom:20}}>
-              {(subjects.length?subjects:TIP_SUBJECTS).map(s=>(
-                <button key={s} onClick={()=>setSessSubject(s)} style={{padding:'4px 10px',fontSize:11,borderRadius:0,border:'1px solid var(--border)',cursor:'pointer',background:sessSubject===s?'var(--purple)':'var(--bg2)',color:sessSubject===s?'#fff':'var(--text)'}}>{s}</button>
-              ))}
-            </div>
-            <div style={{fontSize:12,fontWeight:600,color:'var(--text2)',marginBottom:8}}>Süre</div>
-            <div style={{display:'flex',gap:6,marginBottom:20}}>
-              {[25,45,60,90].map(m=>(
-                <button key={m} onClick={()=>setSessMinutes(m)} style={{flex:1,padding:'8px 0',fontSize:12,fontWeight:600,borderRadius:0,border:'1px solid var(--border)',cursor:'pointer',background:sessMinutes===m?'var(--purple)':'var(--bg2)',color:sessMinutes===m?'#fff':'var(--text)'}}>{m} dk</button>
-              ))}
-            </div>
-            {sessStarted&&(
-              <div style={{padding:14,border:'1px solid var(--border)',borderRadius:0,background:'var(--purple-light)',fontSize:13,color:'var(--text)'}}>
-                <div style={{fontWeight:700,marginBottom:4}}>{sessSubject} · {sessMinutes} dk</div>
-                <div style={{fontSize:11,color:'var(--text3)'}}>Oturum alanı hazır. Sayaç ve arkadaş davet özelliği yakında eklenecek.</div>
-              </div>
-            )}
-          </div>
-          <div style={{padding:'0 16px',height:96,boxSizing:'border-box',display:'flex',alignItems:'center',borderTop:'1px solid var(--border)',flexShrink:0}}>
-            <button onClick={()=>setSessStarted(s=>!s)} disabled={!sessSubject} style={{width:'100%',padding:10,fontSize:13,fontWeight:600,background:!sessSubject?'var(--bg3)':sessStarted?'#B42318':'var(--purple)',color:!sessSubject?'var(--text3)':'#fff',border:'none',borderRadius:'var(--radius)',cursor:sessSubject?'pointer':'default'}}>
-              {sessStarted?'Oturumu Bitir':'Oturumu Başlat'}
-            </button>
           </div>
         </div>
       )}
