@@ -53,6 +53,7 @@ export default function Dashboard({currentUser,allUsers,initialConversations,ini
   const [showMatch,setShowMatch]=useState(false)
   const [showPlans,setShowPlans]=useState(true)
   const [showSession,setShowSession]=useState(false)
+  const [showMsgs,setShowMsgs]=useState(false)
   const [collapsed,setCollapsed]=useState(false)
   const [sessSubject,setSessSubject]=useState<string>('')
   const [sessMinutes,setSessMinutes]=useState(25)
@@ -260,7 +261,7 @@ export default function Dashboard({currentUser,allUsers,initialConversations,ini
   }
 
   async function startChat(userId:string){
-    setShowMatch(false)
+    setShowMatch(false);setShowMsgs(true)
     const ex=convs.find(c=>(c.user1===currentUser.id&&c.user2===userId)||(c.user1===userId&&c.user2===currentUser.id))
     if(ex){setActiveConv(ex.id);return}
     const{data,error}=await sb.from('conversations').insert({user1:currentUser.id,user2:userId}).select().single()
@@ -273,6 +274,7 @@ export default function Dashboard({currentUser,allUsers,initialConversations,ini
     await sb.from('messages').insert({conversation_id:activeConv,sender_id:currentUser.id,content:c})
   }
 
+  const isHome=!(showPanel||showSession||showMatch||showMsgs)
   const ac=convs.find(c=>c.id===activeConv)
   const othId=ac?(ac.user1===currentUser.id?ac.user2:ac.user1):null
   const oth=allUsers.find(u=>u.id===othId)
@@ -284,19 +286,22 @@ export default function Dashboard({currentUser,allUsers,initialConversations,ini
 
       {/* SIDEBAR */}
       <div style={{width:collapsed?56:200,flexShrink:0,display:'flex',flexDirection:'column',gap:10,transition:'width .2s ease'}}>
-        <div style={{padding:'0 0 0 '+(collapsed?0:14)+'px',flex:1,minHeight:40,boxSizing:'border-box',background:'var(--bg)',border:'1px solid var(--border)',overflow:'hidden',display:'flex',alignItems:'center',justifyContent:collapsed?'center':'flex-start',gap:8}}>
-          <BookOpen size={22} color="var(--purple)" style={{flexShrink:0}}/>
-          {!collapsed&&<span style={{fontSize:16,fontWeight:700,color:'var(--text)',whiteSpace:'nowrap'}}>GaziÇArk</span>}
+        <div style={{padding:collapsed?0:'0 8px 0 14px',flex:1,minHeight:40,boxSizing:'border-box',background:'var(--bg)',border:'1px solid var(--border)',overflow:'hidden',display:'flex',alignItems:'center',justifyContent:collapsed?'center':'space-between',gap:8}}>
+          {!collapsed&&<div style={{display:'flex',alignItems:'center',gap:8,minWidth:0}}>
+            <BookOpen size={22} color="var(--purple)" style={{flexShrink:0}}/>
+            <span style={{fontSize:16,fontWeight:700,color:'var(--text)',whiteSpace:'nowrap'}}>GaziÇArk</span>
+          </div>}
+          <button id="sb-toggle" title={collapsed?'Menüyü aç':'Menüyü kapat'} onClick={()=>setCollapsed(c=>!c)} style={{background:'none',border:'none',color:'var(--text2)',cursor:'pointer',padding:4,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>{collapsed?<PanelLeftOpen size={18}/>:<PanelLeftClose size={18}/>}</button>
         </div>
-        <div style={{flex:5,minHeight:0,display:'flex',flexDirection:'column',gap:10}}>
-          <SideBtn id="sb-teklif" collapsed={collapsed} active={showPanel} label="Kendi Programım" title="Kendi Programım" onClick={()=>{setShowPanel(p=>!p);setShowPlans(false);setShowSession(false);setShowMatch(false)}}><ClipboardList size={20}/></SideBtn>
-          <SideBtn id="sb-session" collapsed={collapsed} active={showSession} label="Çalışma Oturumu" title="Çalışma Oturumu" onClick={()=>{setShowSession(p=>!p);setShowPanel(false);setShowPlans(false);setShowMatch(false)}}><Timer size={20}/></SideBtn>
-          <SideBtn id="sb-buddy" collapsed={collapsed} label="Arkadaş Bul" title="Arkadaş Bul" onClick={()=>{setShowMatch(p=>!p);setShowPanel(false);setShowPlans(false);setShowSession(false)}} active={showMatch} badge={pending}><Search size={20}/></SideBtn>
-          <SideBtn id="sb-planlar" collapsed={collapsed} active={!(showPanel||showSession||showMatch)} label="Çalışma Planım" title="Çalışma Planım" onClick={()=>{setShowPlans(true);setShowPanel(false);setShowSession(false);setShowMatch(false)}} badge={pendingProposalsCount}><CalendarDays size={20}/></SideBtn>
+        <div style={{flex:6,minHeight:0,display:'flex',flexDirection:'column',gap:10}}>
+          <SideBtn id="sb-teklif" collapsed={collapsed} active={showPanel} label="Kendi Programım" title="Kendi Programım" onClick={()=>{setShowPanel(p=>!p);setShowPlans(false);setShowSession(false);setShowMatch(false);setShowMsgs(false)}}><ClipboardList size={20}/></SideBtn>
+          <SideBtn id="sb-session" collapsed={collapsed} active={showSession} label="Çalışma Oturumu" title="Çalışma Oturumu" onClick={()=>{setShowSession(p=>!p);setShowPanel(false);setShowPlans(false);setShowMatch(false);setShowMsgs(false)}}><Timer size={20}/></SideBtn>
+          <SideBtn id="sb-buddy" collapsed={collapsed} label="Arkadaş Bul" title="Arkadaş Bul" onClick={()=>{setShowMatch(p=>!p);setShowPanel(false);setShowPlans(false);setShowSession(false);setShowMsgs(false)}} active={showMatch} badge={pending}><Search size={20}/></SideBtn>
+          <SideBtn id="sb-mesaj" collapsed={collapsed} active={showMsgs} label="Mesajlarım" title="Mesajlarım" onClick={()=>{setShowMsgs(p=>!p);setShowPanel(false);setShowPlans(false);setShowSession(false);setShowMatch(false)}}><MessageCircle size={20}/></SideBtn>
+          <SideBtn id="sb-planlar" collapsed={collapsed} active={isHome} label="Çalışma Planım" title="Çalışma Planım" onClick={()=>{setShowPlans(true);setShowPanel(false);setShowSession(false);setShowMatch(false);setShowMsgs(false)}} badge={pendingProposalsCount}><CalendarDays size={20}/></SideBtn>
           <SideBtn id="sb-profil" collapsed={collapsed} label="Profil" title="Profil" onClick={()=>setShowProfile(true)}><Settings size={20}/></SideBtn>
         </div>
-        <div style={{flex:2,minHeight:0,display:'flex',flexDirection:'column',gap:10}}>
-          <SideBtn id="sb-toggle" collapsed={collapsed} label="Menüyü Daralt" title={collapsed?'Menüyü aç':'Menüyü kapat'} onClick={()=>setCollapsed(c=>!c)}>{collapsed?<PanelLeftOpen size={20}/>:<PanelLeftClose size={20}/>}</SideBtn>
+        <div style={{flex:1,minHeight:0,display:'flex',flexDirection:'column',gap:10}}>
           <SideBtn id="sb-cikis" collapsed={collapsed} label="Çıkış" title="Çıkış" onClick={async()=>{await sb.auth.signOut();window.location.href='/auth'}}><LogOut size={20}/></SideBtn>
         </div>
       </div>
@@ -435,7 +440,7 @@ export default function Dashboard({currentUser,allUsers,initialConversations,ini
 
       {showMatch&&<MatchPanel inline currentUser={currentUser} onStartChat={startChat} onClose={()=>{setShowMatch(false);loadPending()}}/>}
       {/* WORK PLANS PANEL */}
-      {!(showPanel||showSession||showMatch)&&(
+      {isHome&&(
         <div style={{flex:1,minWidth:0,maxWidth:760,width:'100%',margin:'0 auto',alignSelf:'center',maxHeight:'min(100%, 860px)',background:'var(--bg)',border:'1px solid var(--border)',display:'flex',flexDirection:'column',overflow:'hidden',animation:'slideIn .2s ease'}}>
           <div style={{padding:'0 16px',height:72,boxSizing:'border-box',borderBottom:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
             <div>
@@ -653,7 +658,7 @@ export default function Dashboard({currentUser,allUsers,initialConversations,ini
       </div>
 
       {/* RIGHT: MESSAGES */}
-      <div style={{flex:1,minWidth:0,border:'1px solid var(--border)',display:'none',flexDirection:'column',background:'var(--bg)'}}>
+      <div style={{flex:1,minWidth:0,maxWidth:760,width:'100%',margin:'0 auto',alignSelf:'center',maxHeight:'min(100%, 860px)',border:'1px solid var(--border)',display:showMsgs?'flex':'none',flexDirection:'column',background:'var(--bg)',overflow:'hidden',animation:'slideIn .2s ease'}}>
         {!activeConv?(
           <>
             <div style={{padding:'0 16px',height:72,boxSizing:'border-box',display:'flex',alignItems:'center',borderBottom:'1px solid var(--border)',flexShrink:0}}>
