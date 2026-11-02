@@ -1,12 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { X, Search, Clock } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import type { MatchedUser, Profile, FriendRequest } from '@/types'
+import { upcomingWeeks, slotKeys } from '@/lib/weeks'
 
 const DAYS = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar']
-const COLORS = ['#d5edeb','#d1fae5','#fef3c7','#e0e7ff','#fce7f3','#dcfce7']
-const TEXT_COLORS = ['#0a5a54','#065f46','#92400e','#3730a3','#9d174d','#166534']
+const COLORS = ['#1b3b45','#1c3d33','#433a1f','#27305a','#46253c','#213f2b']
+const TEXT_COLORS = ['#8fcfc8','#86d0b0','#d9b36a','#a5b4f0','#e69bbd','#8fd0a0']
 
 function getColorIdx(str: string) {
   let h = 0; for (const c of str) h = (h * 31 + c.charCodeAt(0)) & 0xffff
@@ -30,9 +32,10 @@ type Props = {
   currentUser: Profile
   onStartChat: (userId: string) => void
   onClose: () => void
+  inline?: boolean
 }
 
-export default function MatchPanel({ currentUser, onStartChat, onClose }: Props) {
+export default function MatchPanel({ currentUser, onStartChat, onClose, inline }: Props) {
   const supabase = createClient()
   const [matches, setMatches] = useState<MatchedUser[]>([])
   const [loading, setLoading] = useState(true)
@@ -49,7 +52,7 @@ export default function MatchPanel({ currentUser, onStartChat, onClose }: Props)
     // Kendi derslerim ve müsaitliğim
     const [{ data: mySubjects }, { data: myAvail }] = await Promise.all([
       supabase.from('user_subjects').select('subject').eq('user_id', currentUser.id),
-      supabase.from('availability').select('day,hour').eq('user_id', currentUser.id)
+      supabase.from('availability').select('user_id,day,hour,week_start').eq('user_id', currentUser.id)
     ])
 
     // Tüm diğer kullanıcılar
@@ -67,11 +70,12 @@ export default function MatchPanel({ currentUser, onStartChat, onClose }: Props)
     setRequests(reqs ?? [])
 
     const mySubjectSet = new Set((mySubjects ?? []).map((s: any) => s.subject))
-    const mySlotSet = new Set((myAvail ?? []).map((a: any) => `${a.day}-${a.hour}`))
+    const weeks = upcomingWeeks()
+    const mySlotSet = slotKeys(myAvail ?? [], currentUser.id, weeks)
 
     const matched: MatchedUser[] = (allUsers ?? []).map((user: any) => {
       const userSubjects = (allSubjects ?? []).filter((s: any) => s.user_id === user.id).map((s: any) => s.subject)
-      const userSlots = new Set((allAvail ?? []).filter((a: any) => a.user_id === user.id).map((a: any) => `${a.day}-${a.hour}`))
+      const userSlots = slotKeys(allAvail ?? [], user.id, weeks)
 
       const commonSubjects = userSubjects.filter((s: string) => mySubjectSet.has(s))
       const commonSlots = Array.from(mySlotSet).filter(s => userSlots.has(s)).length
@@ -119,21 +123,25 @@ export default function MatchPanel({ currentUser, onStartChat, onClose }: Props)
   })
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)',
+    <div style={inline ? { display: 'contents' } : {
+      position: 'fixed', inset: 0, background: 'rgba(2,6,20,0.82)',
       display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200
-    }} onClick={onClose}>
-      <div style={{
+    }} onClick={inline ? undefined : onClose}>
+      <div className={inline ? undefined : 'dark-modal'} style={inline ? {
+        flex: 1, minWidth: 0, maxWidth: 760, width: '100%', margin: '0 auto', alignSelf: 'center',
+        maxHeight: 'min(100%, 860px)', background: 'var(--bg)', border: '1px solid var(--border)',
+        display: 'flex', flexDirection: 'column', overflow: 'hidden'
+      } : {
         background: 'var(--bg)', borderRadius: 'var(--radius-lg)',
-        width: '600px', maxHeight: '88vh', display: 'flex', flexDirection: 'column',
+        width: '560px', maxHeight: '86vh', display: 'flex', flexDirection: 'column',
         overflow: 'hidden'
       }} onClick={e => e.stopPropagation()}>
 
         {/* Header */}
-        <div style={{ padding: '20px 24px 0', borderBottom: '0.5px solid var(--border)' }}>
+        <div style={{ padding: '20px 24px 0', borderBottom: '1px solid var(--border)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-            <h2 style={{ fontSize: '16px', fontWeight: 600 }}>GaziÇArk Bul 🔍</h2>
-            <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', color: 'var(--text3)' }}>✕</button>
+            <h2 style={{ fontSize: '16px', fontWeight: 600 }}>GaziÇArk Bul <Search size={14} style={{verticalAlign:'middle',flexShrink:0}}/> </h2>
+            <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', color: 'var(--text3)' }}><X size={18}/></button>
           </div>
           <div style={{ display: 'flex', gap: 0 }}>
             <button onClick={() => setTab('discover')} style={{
@@ -149,7 +157,7 @@ export default function MatchPanel({ currentUser, onStartChat, onClose }: Props)
               İstekler {pendingReceived.length > 0 && (
                 <span style={{
                   background: '#E24B4A', color: '#fff', fontSize: '10px',
-                  borderRadius: '10px', padding: '1px 6px', marginLeft: '4px'
+                  borderRadius: 0, padding: '1px 6px', marginLeft: '4px'
                 }}>{pendingReceived.length}</span>
               )}
             </button>
@@ -164,8 +172,8 @@ export default function MatchPanel({ currentUser, onStartChat, onClose }: Props)
               <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
                 {(['all', 'year', 'subject'] as const).map(f => (
                   <button key={f} onClick={() => setFilter(f)} style={{
-                    padding: '5px 14px', fontSize: '12px', borderRadius: '20px',
-                    border: '0.5px solid var(--border)', cursor: 'pointer',
+                    padding: '5px 14px', fontSize: '12px', borderRadius: 0,
+                    border: '1px solid var(--border)', cursor: 'pointer',
                     background: filter === f ? 'var(--purple)' : 'var(--bg2)',
                     color: filter === f ? '#fff' : 'var(--text2)'
                   }}>
@@ -185,7 +193,7 @@ export default function MatchPanel({ currentUser, onStartChat, onClose }: Props)
                   {filtered.map(user => (
                     <div key={user.id} style={{
                       background: 'var(--bg2)', borderRadius: 'var(--radius)',
-                      padding: '14px 16px', border: '0.5px solid var(--border)'
+                      padding: '14px 16px', border: '1px solid var(--border)'
                     }}>
                       <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
                         <Avatar name={user.name} />
@@ -193,12 +201,12 @@ export default function MatchPanel({ currentUser, onStartChat, onClose }: Props)
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                             <span style={{ fontSize: '14px', fontWeight: 600 }}>{user.name}</span>
                             <span style={{
-                              fontSize: '11px', padding: '2px 8px', borderRadius: '10px',
+                              fontSize: '11px', padding: '2px 8px', borderRadius: 0,
                               background: 'var(--purple-light)', color: 'var(--purple-dark)'
                             }}>{user.year}. Sınıf</span>
                             {/* {user.matchPercent > 0 && (
                               <span style={{
-                                fontSize: '11px', padding: '2px 8px', borderRadius: '10px',
+                                fontSize: '11px', padding: '2px 8px', borderRadius: 0,
                                 background: 'var(--purple-light)', color: 'var(--purple-dark)'
                               }}>%{user.matchPercent} uyum</span>
                             )} */}
@@ -212,7 +220,7 @@ export default function MatchPanel({ currentUser, onStartChat, onClose }: Props)
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '8px' }}>
                               {user.commonSubjects.map(s => (
                                 <span key={s} style={{
-                                  fontSize: '11px', padding: '2px 8px', borderRadius: '10px',
+                                  fontSize: '11px', padding: '2px 8px', borderRadius: 0,
                                   background: 'var(--purple-light)', color: 'var(--purple-dark)'
                                 }}>{s}</span>
                               ))}
@@ -221,7 +229,7 @@ export default function MatchPanel({ currentUser, onStartChat, onClose }: Props)
 
                           {user.commonSlots > 0 && (
                             <p style={{ fontSize: '12px', color: 'var(--text3)' }}>
-                              🕐 {user.commonSlots} ortak müsait saat
+                              <Clock size={14} style={{verticalAlign:'middle',flexShrink:0}}/> {user.commonSlots} ortak müsait saat
                             </p>
                           )}
                         </div>
@@ -270,7 +278,7 @@ export default function MatchPanel({ currentUser, onStartChat, onClose }: Props)
                 return (
                   <div key={req.id} style={{
                     background: 'var(--bg2)', borderRadius: 'var(--radius)',
-                    padding: '14px 16px', border: '0.5px solid var(--border)',
+                    padding: '14px 16px', border: '1px solid var(--border)',
                     display: 'flex', alignItems: 'center', gap: '12px'
                   }}>
                     <Avatar name={sender.name} />
@@ -286,7 +294,7 @@ export default function MatchPanel({ currentUser, onStartChat, onClose }: Props)
                     <div style={{ display: 'flex', gap: '8px' }}>
                       <button onClick={() => respondRequest(req.id, 'rejected')} style={{
                         padding: '6px 12px', fontSize: '12px', borderRadius: 'var(--radius)',
-                        border: '0.5px solid var(--border)', background: 'none',
+                        border: '1px solid var(--border)', background: 'none',
                         color: 'var(--text2)', cursor: 'pointer'
                       }}>Reddet</button>
                       <button onClick={() => respondRequest(req.id, 'accepted')} style={{

@@ -37,7 +37,7 @@ export default async function Home() {
   // Kullanıcının müsaitlik programı
   const { data: myAvailability } = await supabase
     .from('availability')
-    .select('day, hour')
+    .select('day, hour, week_start')
     .eq('user_id', user.id)
 
   return (

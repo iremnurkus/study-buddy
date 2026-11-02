@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile } from '@/types'
 
@@ -30,22 +31,23 @@ export default function ProfilePanel({ currentUser, onClose, onSave }: Props) {
   return (
     <div
       style={{
-        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)',
+        position: 'fixed', inset: 0, background: 'rgba(2,6,20,0.82)',
         display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200,
       }}
       onClick={onClose}
     >
       <div
+        className="dark-modal"
         style={{
           background: 'var(--bg)', borderRadius: 'var(--radius-lg)',
-          width: '480px', display: 'flex', flexDirection: 'column', overflow: 'hidden',
+          width: '460px', display: 'flex', flexDirection: 'column', overflow: 'hidden',
         }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div style={{ padding: '20px 24px 16px', borderBottom: '0.5px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <h2 style={{ fontSize: '16px', fontWeight: 600 }}>Profil Ayarları</h2>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', color: 'var(--text3)' }}>✕</button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', color: 'var(--text3)' }}><X size={18}/></button>
         </div>
 
         {/* Content */}
@@ -63,7 +65,7 @@ export default function ProfilePanel({ currentUser, onClose, onSave }: Props) {
                   onClick={() => setYear(y)}
                   style={{
                     padding: '6px 14px', fontSize: '13px', borderRadius: 'var(--radius)',
-                    border: '0.5px solid var(--border)', cursor: 'pointer',
+                    border: '1px solid var(--border)', cursor: 'pointer',
                     background: year === y ? 'var(--purple)' : 'var(--bg2)',
                     color: year === y ? '#fff' : 'var(--text)',
                   }}
@@ -87,7 +89,7 @@ export default function ProfilePanel({ currentUser, onClose, onSave }: Props) {
         </div>
 
         {/* Footer */}
-        <div style={{ padding: '14px 24px', borderTop: '0.5px solid var(--border)', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+        <div style={{ padding: '14px 24px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
           <button onClick={onClose} style={secBtn}>İptal</button>
           <button id="btn-profil-kaydet" onClick={handleSave} disabled={saving} style={priBtn}>
             {saving ? 'Kaydediliyor...' : 'Kaydet'}
@@ -101,7 +103,7 @@ export default function ProfilePanel({ currentUser, onClose, onSave }: Props) {
 const lbl: React.CSSProperties = { fontSize: '12px', color: 'var(--text2)', display: 'block', marginBottom: '6px' }
 const inp: React.CSSProperties = {
   width: '100%', padding: '9px 12px', fontSize: '13px',
-  border: '0.5px solid var(--border)', borderRadius: 'var(--radius)',
+  border: '1px solid var(--border)', borderRadius: 'var(--radius)',
   background: 'var(--bg2)', color: 'var(--text)', outline: 'none',
 }
 const priBtn: React.CSSProperties = {
@@ -111,6 +113,6 @@ const priBtn: React.CSSProperties = {
 }
 const secBtn: React.CSSProperties = {
   padding: '8px 20px', fontSize: '13px', background: 'none',
-  color: 'var(--text2)', border: '0.5px solid var(--border)',
+  color: 'var(--text2)', border: '1px solid var(--border)',
   borderRadius: 'var(--radius)', cursor: 'pointer',
 }

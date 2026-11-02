@@ -1,8 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { X, BookOpen, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { mondayOf, addWeeks, weekLabel, upcomingWeeks, fmtDate, parseDate } from '@/lib/weeks'
 import type { Profile } from '@/types'
+
+const navBtn = (disabled: boolean): React.CSSProperties => ({ background: 'var(--bg2)', border: '1px solid var(--border)', color: 'var(--text2)', cursor: disabled ? 'default' : 'pointer', opacity: disabled ? 0.4 : 1, padding: '3px', display: 'flex' })
 
 const DAYS = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar']
 const HOURS = [8,9,10,11,12,13,14,15,16,17,18,19,20,21,22]
@@ -24,24 +28,38 @@ export default function StudyProposalModal({ currentUser, targetUser, mySlots, o
   const [message, setMessage] = useState('')
   const [sending, setSending] = useState(false)
 
-  // Gelecek 14 günü oluştur
-  const next14Days = Array.from({length: 14}).map((_, i) => {
-    const d = new Date()
-    d.setDate(d.getDate() + i)
-    return d
-  })
+  // Seçili haftanın 7 günü
+  const [week, setWeek] = useState(() => mondayOf(new Date()))
+  const weeks = upcomingWeeks()
+  const weekDays = Array.from({length: 7}).map((_, i) => { const d = parseDate(week); d.setDate(d.getDate() + i); return d })
+  const todayStr = fmtDate(new Date())
 
-  // Ortak müsait saatleri bul
+  // Ortak müsait saatleri bul ("hafta|gün-saat")
   const commonSlots = mySlots.filter(s => targetUser.userSlots.includes(s))
   
   // Seçilen tarihin hangi güne (0-6) denk geldiğini bul (Pazartesi=0)
-  const selectedDateObj = selectedDate ? new Date(selectedDate) : null
+  const selectedDateObj = selectedDate ? parseDate(selectedDate) : null
   const selectedDayIndex = selectedDateObj ? (selectedDateObj.getDay() + 6) % 7 : -1
+  const selectedWeek = selectedDate ? mondayOf(selectedDate) : ''
   
   // Sadece seçilen günün ortak saatlerini al
+  // Bekleyen/onaylı tekliflerin saatleri dolu sayılır; geri çekilen/reddedilenler serbest kalır
+  const [busy, setBusy] = useState<Set<string>>(new Set())
+  useEffect(() => {
+    supabase.from('study_proposals').select('date,hours,status')
+      .or(`sender_id.in.(${currentUser.id},${targetUser.id}),receiver_id.in.(${currentUser.id},${targetUser.id})`)
+      .in('status', ['pending', 'accepted'])
+      .gte('date', fmtDate(new Date()))
+      .then(({ data }) => {
+        const s = new Set<string>()
+        ;(data ?? []).forEach((p: any) => (p.hours ?? []).forEach((h: number) => s.add(`${p.date}|${h}`)))
+        setBusy(s)
+      })
+  }, [])
+
   const hoursForSelectedDay = commonSlots
-    .filter(slot => slot.startsWith(`${selectedDayIndex}-`))
-    .map(slot => Number(slot.split('-')[1]))
+    .filter(slot => slot.startsWith(`${selectedWeek}|${selectedDayIndex}-`))
+    .map(slot => Number(slot.split('-').pop()))
     .sort((a, b) => a - b)
 
   async function handleSend() {
@@ -71,29 +89,36 @@ export default function StudyProposalModal({ currentUser, targetUser, mySlots, o
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 300 }} onClick={onClose}>
-      <div style={{ background: 'var(--bg)', borderRadius: 'var(--radius-lg)', width: '480px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
-        <div style={{ padding: '20px 24px 16px', borderBottom: '0.5px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <h2 style={{ fontSize: '16px', fontWeight: 600 }}>📚 {targetUser.name} ile Birlikte Çalış</h2>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', color: 'var(--text3)' }}>✕</button>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(2,6,20,0.82)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 300 }} onClick={onClose}>
+      <div className="dark-modal" style={{ background: 'var(--bg)', borderRadius: 'var(--radius-lg)', width: '460px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
+        <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h2 style={{ fontSize: '16px', fontWeight: 600 }}><BookOpen size={14} style={{verticalAlign:'middle',flexShrink:0}}/> {targetUser.name} ile Birlikte Çalış</h2>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', color: 'var(--text3)' }}><X size={18}/></button>
         </div>
 
         <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {commonSlots.length === 0 && (
-            <div style={{ padding: '12px', background: '#fee2e2', color: '#991b1b', borderRadius: 'var(--radius)', fontSize: '12px' }}>
-              ⚠️ Ortak müsait saatiniz yok. Lütfen programınızı güncelleyin.
+            <div style={{ padding: '12px', background: '#452428', color: '#e89aa0', borderRadius: 'var(--radius)', fontSize: '12px' }}>
+              <AlertTriangle size={14} style={{verticalAlign:'middle',flexShrink:0}}/> Ortak müsait saatiniz yok. Lütfen programınızı güncelleyin.
             </div>
           )}
 
 
 
           <div>
-            <label style={lbl}>Tarih Seç</label>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <label style={{ ...lbl, marginBottom: 0 }}>Tarih Seç</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <button disabled={week <= weeks[0]} onClick={() => setWeek(w => addWeeks(w, -1))} style={navBtn(week <= weeks[0])}><ChevronLeft size={14}/></button>
+                <span style={{ fontSize: '12px', fontWeight: 600, minWidth: '96px', textAlign: 'center' }}>{weekLabel(week)}</span>
+                <button disabled={week >= weeks[weeks.length - 1]} onClick={() => setWeek(w => addWeeks(w, 1))} style={navBtn(week >= weeks[weeks.length - 1])}><ChevronRight size={14}/></button>
+              </div>
+            </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px', paddingBottom: '8px' }}>
-              {next14Days.map(date => {
-                const dateStr = date.toISOString().split('T')[0]
+              {weekDays.map(date => {
+                const dateStr = fmtDate(date)
                 const dayIdx = (date.getDay() + 6) % 7
-                const hasCommon = commonSlots.some(s => s.startsWith(`${dayIdx}-`))
+                const hasCommon = dateStr >= todayStr && commonSlots.some(s => s.startsWith(`${week}|${dayIdx}-`))
                 const isSel = selectedDate === dateStr
                 
                 return (
@@ -123,13 +148,15 @@ export default function StudyProposalModal({ currentUser, targetUser, mySlots, o
           {selectedDate && hoursForSelectedDay.length > 0 && (
             <div>
               <label style={lbl}>Saat Seç (Çoklu seçebilirsiniz)</label>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', padding: '12px', border: '0.5px solid var(--border)', borderRadius: 'var(--radius)', background: 'var(--bg2)' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', padding: '12px', border: '1px solid var(--border)', borderRadius: 'var(--radius)', background: 'var(--bg2)' }}>
                 {hoursForSelectedDay.map(h => {
                   const isSel = selectedSlots.includes(h)
+                  const isBusy = busy.has(`${selectedDate}|${h}`)
                   return (
-                    <button key={h} onClick={() => setSelectedSlots(prev => prev.includes(h) ? prev.filter(s => s !== h) : [...prev, h])} style={{
+                    <button key={h} disabled={isBusy} title={isBusy ? 'Bu saat başka bir çalışmada dolu' : undefined} onClick={() => setSelectedSlots(prev => prev.includes(h) ? prev.filter(s => s !== h) : [...prev, h])} style={{
                       padding: '8px 14px', fontSize: '13px', borderRadius: 'var(--radius)',
-                      border: isSel ? 'none' : '0.5px solid var(--border)', cursor: 'pointer',
+                      border: isSel ? 'none' : '1px solid var(--border)', cursor: isBusy ? 'not-allowed' : 'pointer',
+                      opacity: isBusy ? 0.35 : 1, textDecoration: isBusy ? 'line-through' : 'none',
                       background: isSel ? 'var(--purple)' : 'var(--bg)', color: isSel ? '#fff' : 'var(--text)',
                       fontWeight: isSel ? 600 : 400
                     }}>
@@ -147,7 +174,7 @@ export default function StudyProposalModal({ currentUser, targetUser, mySlots, o
           </div>
         </div>
 
-        <div style={{ padding: '14px 24px', borderTop: '0.5px solid var(--border)', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+        <div style={{ padding: '14px 24px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
           <button onClick={onClose} style={secBtn}>İptal</button>
           <button onClick={handleSend} disabled={sending || !selectedDate || selectedSlots.length === 0} style={{ ...priBtn, opacity: (!selectedDate || selectedSlots.length === 0) ? 0.5 : 1 }}>
             {sending ? 'Gönderiliyor...' : 'Teklif Gönder'}
@@ -159,6 +186,6 @@ export default function StudyProposalModal({ currentUser, targetUser, mySlots, o
 }
 
 const lbl: React.CSSProperties = { fontSize: '12px', color: 'var(--text2)', display: 'block', marginBottom: '6px' }
-const inp: React.CSSProperties = { width: '100%', padding: '9px 12px', fontSize: '13px', border: '0.5px solid var(--border)', borderRadius: 'var(--radius)', background: 'var(--bg)', color: 'var(--text)', outline: 'none' }
+const inp: React.CSSProperties = { width: '100%', padding: '9px 12px', fontSize: '13px', border: '1px solid var(--border)', borderRadius: 'var(--radius)', background: 'var(--bg)', color: 'var(--text)', outline: 'none' }
 const priBtn: React.CSSProperties = { padding: '8px 20px', fontSize: '13px', fontWeight: 500, background: 'var(--purple)', color: '#fff', border: 'none', borderRadius: 'var(--radius)', cursor: 'pointer' }
-const secBtn: React.CSSProperties = { padding: '8px 20px', fontSize: '13px', background: 'none', color: 'var(--text2)', border: '0.5px solid var(--border)', borderRadius: 'var(--radius)', cursor: 'pointer' }
+const secBtn: React.CSSProperties = { padding: '8px 20px', fontSize: '13px', background: 'none', color: 'var(--text2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', cursor: 'pointer' }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { Settings, BookOpen, Search, LogOut } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile, Message } from '@/types'
 import ProfilePanel from './ProfilePanel'
@@ -14,8 +15,8 @@ type Props = {
 
 const SUBJECTS = ['Matematik', 'Fizik', 'Kimya', 'Biyoloji', 'Tarih', 'Coğrafya', 'İngilizce', 'Türkçe', 'Genel']
 
-const COLORS = ['#d5edeb', '#d1fae5', '#fef3c7', '#e0e7ff', '#fce7f3', '#dcfce7']
-const TEXT_COLORS = ['#0a5a54', '#065f46', '#92400e', '#3730a3', '#9d174d', '#166534']
+const COLORS = ['#1b3b45', '#1c3d33', '#433a1f', '#27305a', '#46253c', '#213f2b']
+const TEXT_COLORS = ['#8fcfc8', '#86d0b0', '#d9b36a', '#a5b4f0', '#e69bbd', '#8fd0a0']
 
 function getColorIdx(str: string) {
   let h = 0; for (const c of str) h = (h * 31 + c.charCodeAt(0)) & 0xffff
@@ -186,22 +187,22 @@ export default function ChatLayout({ currentUser, allUsers, initialConversations
       {/* SIDEBAR */}
       <div style={{
         width: '280px', flexShrink: 0, background: 'var(--bg)',
-        borderRight: '0.5px solid var(--border)',
+        borderRight: '1px solid var(--border)',
         display: 'flex', flexDirection: 'column'
       }}>
         {/* Header */}
         <div style={{
-          padding: '16px', borderBottom: '0.5px solid var(--border)',
+          padding: '16px', borderBottom: '1px solid var(--border)',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between'
         }}>
-          <span style={{ fontWeight: 600, fontSize: '15px' }}>📚 GaziÇArk</span>
+          <span style={{ fontWeight: 600, fontSize: '15px' }}><BookOpen size={14} style={{verticalAlign:'middle',flexShrink:0}}/> GaziÇArk</span>
           <div style={{ display: 'flex', gap: '8px' }}>
             <button onClick={() => setShowMatch(true)} style={{
               ...iconBtn, position: 'relative',
               background: 'var(--purple-light)', borderRadius: 'var(--radius)',
               padding: '4px 10px', fontSize: '12px', color: 'var(--purple)'
             }}>
-              🔍 Arkadaş Bul
+              <Search size={14} style={{verticalAlign:'middle',flexShrink:0}}/> Arkadaş Bul
               {pendingCount > 0 && (
                 <span style={{
                   position: 'absolute', top: '-4px', right: '-4px',
@@ -211,13 +212,13 @@ export default function ChatLayout({ currentUser, allUsers, initialConversations
                 }}>{pendingCount}</span>
               )}
             </button>
-            <button onClick={() => setShowProfile(true)} style={iconBtn}>⚙️</button>
-            <button onClick={signOut} style={iconBtn}>↩</button>
+            <button onClick={() => setShowProfile(true)} style={iconBtn}><Settings size={18}/></button>
+            <button onClick={signOut} style={iconBtn}><LogOut size={18}/></button>
           </div>
         </div>
 
         {/* Search */}
-        <div style={{ padding: '12px 16px', borderBottom: '0.5px solid var(--border)' }}>
+        <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
           <input
             placeholder="Arkadaş ara..."
             value={search}
@@ -283,7 +284,7 @@ export default function ChatLayout({ currentUser, allUsers, initialConversations
 
         {/* Current user footer */}
         <div style={{
-          padding: '12px 16px', borderTop: '0.5px solid var(--border)',
+          padding: '12px 16px', borderTop: '1px solid var(--border)',
           display: 'flex', alignItems: 'center', gap: '10px'
         }}>
           <Avatar name={currentUser?.name ?? '?'} size={30} />
@@ -302,14 +303,14 @@ export default function ChatLayout({ currentUser, allUsers, initialConversations
             alignItems: 'center', justifyContent: 'center', gap: '12px',
             color: 'var(--text3)'
           }}>
-            <span style={{ fontSize: '48px' }}>📖</span>
+            <span style={{ color: 'var(--text3)' }}><BookOpen size={48} style={{verticalAlign:'middle',flexShrink:0}}/></span>
             <p style={{ fontSize: '15px' }}>Bir arkadaş seç ve sohbet başlat</p>
           </div>
         ) : (
           <>
             {/* Chat header */}
             <div style={{
-              padding: '14px 20px', borderBottom: '0.5px solid var(--border)',
+              padding: '14px 20px', borderBottom: '1px solid var(--border)',
               background: 'var(--bg)', display: 'flex', alignItems: 'center', gap: '12px'
             }}>
               {otherUser && <Avatar name={otherUser.name} />}
@@ -328,7 +329,7 @@ export default function ChatLayout({ currentUser, allUsers, initialConversations
             }}>
               {messages.length === 0 && (
                 <p style={{ textAlign: 'center', color: 'var(--text3)', fontSize: '13px', marginTop: '20px' }}>
-                  Henüz mesaj yok. İlk mesajı sen gönder! 👋
+                  Henüz mesaj yok. İlk mesajı sen gönder!
                 </p>
               )}
               {messages.map(msg => {
@@ -342,10 +343,10 @@ export default function ChatLayout({ currentUser, allUsers, initialConversations
                     <div>
                       <div style={{
                         padding: '9px 14px',
-                        borderRadius: isMine ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
+                        borderRadius: 0,
                         background: isMine ? 'var(--purple)' : 'var(--bg)',
                         color: isMine ? '#fff' : 'var(--text)',
-                        border: isMine ? 'none' : '0.5px solid var(--border)',
+                        border: isMine ? 'none' : '1px solid var(--border)',
                         fontSize: '14px', lineHeight: 1.5,
                         maxWidth: '480px', wordBreak: 'break-word'
                       }}>
@@ -366,7 +367,7 @@ export default function ChatLayout({ currentUser, allUsers, initialConversations
 
             {/* Input */}
             <div style={{
-              padding: '14px 20px', borderTop: '0.5px solid var(--border)',
+              padding: '14px 20px', borderTop: '1px solid var(--border)',
               background: 'var(--bg)', display: 'flex', gap: '10px', alignItems: 'flex-end'
             }}>
               <textarea
@@ -377,7 +378,7 @@ export default function ChatLayout({ currentUser, allUsers, initialConversations
                 rows={1}
                 style={{
                   flex: 1, padding: '10px 14px', fontSize: '14px',
-                  border: '0.5px solid var(--border)', borderRadius: 'var(--radius)',
+                  border: '1px solid var(--border)', borderRadius: 'var(--radius)',
                   background: 'var(--bg2)', color: 'var(--text)', outline: 'none',
                   resize: 'none', lineHeight: 1.5, minHeight: '42px', maxHeight: '120px',
                   overflow: 'hidden'
@@ -424,7 +425,7 @@ export default function ChatLayout({ currentUser, allUsers, initialConversations
 
 const inputStyle: React.CSSProperties = {
   padding: '8px 12px', fontSize: '13px',
-  border: '0.5px solid var(--border)', borderRadius: 'var(--radius)',
+  border: '1px solid var(--border)', borderRadius: 'var(--radius)',
   background: 'var(--bg2)', color: 'var(--text)', outline: 'none', width: '100%'
 }
 
@@ -442,6 +443,6 @@ const primaryBtn: React.CSSProperties = {
 const secondaryBtn: React.CSSProperties = {
   padding: '8px 18px', fontSize: '13px',
   background: 'none', color: 'var(--text2)',
-  border: '0.5px solid var(--border)',
+  border: '1px solid var(--border)',
   borderRadius: 'var(--radius)', cursor: 'pointer'
 }

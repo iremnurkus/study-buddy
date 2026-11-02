@@ -116,3 +116,41 @@ create policy "Kullanıcı aldığı teklifi güncelleyebilir"
   using (auth.uid() = receiver_id);
 
 alter publication supabase_realtime add table study_proposals;
+
+-- =============================================
+-- 5. Ortak Çalışma Oturumu (iki taraf da başlatınca başlar)
+-- Mevcut projede bu bölümü Supabase SQL Editor'de bir kez çalıştırın.
+-- =============================================
+
+alter table study_proposals
+  add column if not exists sender_ready boolean not null default false,
+  add column if not exists receiver_ready boolean not null default false,
+  add column if not exists started_at timestamptz,
+  add column if not exists completed_at timestamptz,
+  add column if not exists duration_min int;
+
+drop policy if exists "Kullanıcı aldığı teklifi güncelleyebilir" on study_proposals;
+
+create policy "Teklifin tarafları güncelleyebilir"
+  on study_proposals for update
+  using (auth.uid() = sender_id or auth.uid() = receiver_id);
+
+-- ============================================================
+-- 6. Haftalık Müsaitlik
+-- ============================================================
+alter table availability add column if not exists week_start date;
+
+-- Eski benzersizlik kısıtı haftaları engelliyor; hafta dahil yenisiyle değişir
+alter table availability drop constraint if exists availability_user_id_day_hour_key;
+
+-- Mevcut (haftalık tekrar eden) program: bu hafta + sonraki 7 haftaya kopyalanır
+insert into availability (user_id, day, hour, week_start)
+select a.user_id, a.day, a.hour, (date_trunc('week', current_date) + (n * 7 || ' days')::interval)::date
+from availability a, generate_series(1, 7) n
+where a.week_start is null;
+
+update availability set week_start = date_trunc('week', current_date)::date where week_start is null;
+
+alter table availability alter column week_start set not null;
+create index if not exists availability_user_week_idx on availability (user_id, week_start);
+alter table availability add constraint availability_user_week_day_hour_key unique (user_id, week_start, day, hour);

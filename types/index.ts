@@ -1,4 +1,4 @@
-export type Profile = {
+﻿export type Profile = {
   id: string
   name: string
   subject: string
@@ -43,7 +43,7 @@ export type FriendRequest = {
   id: string
   sender_id: string
   receiver_id: string
-  status: 'pending' | 'accepted' | 'rejected'
+  status: 'pending' | 'accepted' | 'rejected' | 'cancelled'
   created_at: string
 }
 
@@ -62,6 +62,11 @@ export type StudyProposal = {
   date: string
   hours: number[]
   message?: string
-  status: 'pending' | 'accepted' | 'rejected'
+  status: 'pending' | 'accepted' | 'rejected' | 'cancelled'
   created_at: string
+  sender_ready?: boolean
+  receiver_ready?: boolean
+  started_at?: string | null
+  completed_at?: string | null
+  duration_min?: number | null
 }

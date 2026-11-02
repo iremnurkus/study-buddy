@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { BookOpen } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 export default function AuthPage() {
@@ -42,13 +43,13 @@ export default function AuthPage() {
       justifyContent: 'center', background: 'var(--bg2)'
     }}>
       <div style={{
-        background: 'var(--bg)', border: '0.5px solid var(--border)',
+        background: 'var(--bg)', border: '1.5px solid var(--border)',
         borderRadius: 'var(--radius-lg)', padding: '40px',
         width: '100%', maxWidth: '400px'
       }}>
         <div style={{ marginBottom: '24px' }}>
           <h1 style={{ fontSize: '22px', fontWeight: 600, marginBottom: '6px' }}>
-            📚 GaziÇArk
+            <BookOpen size={14} style={{verticalAlign:'middle',flexShrink:0}}/> GaziÇArk
           </h1>
           <p style={{ fontSize: '14px', color: 'var(--text2)' }}>
             {isRegister ? 'Yeni hesap oluştur' : 'Hesabına giriş yap'}
@@ -111,6 +112,6 @@ export default function AuthPage() {
 
 const inp: React.CSSProperties = {
   padding: '11px 14px', fontSize: '14px',
-  border: '0.5px solid var(--border)', borderRadius: 'var(--radius)',
+  border: '1.5px solid var(--border)', borderRadius: 'var(--radius)',
   background: 'var(--bg2)', color: 'var(--text)', outline: 'none', width: '100%'
 }
